@@ -1503,13 +1503,47 @@
     return parseSubscripts(parseExprAtom());
   }
 
+  function setupHeadAndComplements(node, call) {
+    if (call.type != "CallExpression") {
+      window.console.log(call);
+      raise(node.start, "XBar requires a head and complements");
+    }
+    node.head = call.callee;
+    node.complements = call.arguments;
+  }
+
   function parseSubscripts(base, noCalls) {
     if (eat(_dot)) {
-      var node = startNodeFrom(base);
-      node.object = base;
-      node.property = parseIdent(true);
-      node.computed = false;
-      return parseSubscripts(finishNode(node, "MemberExpression"), noCalls);
+      if (!noCalls && eat(_parenL)) {
+        var node = startNodeFrom(base);
+        node.object = base;
+
+        var first = parseExpression(true);
+        if (eat(_comma)) {
+          // first is the head, adjuncts present
+          setupHeadAndComplements(node, first);
+          node.adjuncts = parseExprList(_parenR, false);
+        } else if (eat(_parenR)) {
+          // first is the head, adjuncts not present
+          setupHeadAndComplements(node, first);
+        } else {
+          // first is the specifier
+          node.specifier = first;
+          setupHeadAndComplements(node, parseExpression(true));
+          if (eat(_comma)) {
+            node.adjuncts = parseExprList(_parenR, false);
+          } else {
+            expect(_parenR);
+          }
+        }
+        return parseSubscripts(finishNode(node, "XBarExpression"), noCalls);
+      } else {
+        var node = startNodeFrom(base);
+        node.object = base;
+        node.property = parseIdent(true);
+        node.computed = false;
+        return parseSubscripts(finishNode(node, "MemberExpression"), noCalls);
+      }
     } else if (eat(_bracketL)) {
       var node = startNodeFrom(base);
       node.object = base;

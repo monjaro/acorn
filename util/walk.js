@@ -268,6 +268,19 @@
     c(node.object, st, "Expression");
     if (node.computed) c(node.property, st, "Expression");
   };
+  base.XBarExpression = function(node, st, c) {
+    c(node.object, st, "Expression");
+    if (node.specifier) c(node.specifier, st, "Expression");
+    c(node.head, st, "Expression");
+    for (var i = 0; i < node.complements.length; ++i) {
+      c(node.complements[i], st, "Expression");
+    }
+    if (node.adjuncts) {
+      for (i = 0; i < node.adjuncts.length; ++i) {
+        c(node.adjuncts[i], st, "Expression");
+      }
+    }
+  };
   base.Identifier = base.Literal = ignore;
 
   // A custom walker that keeps track of the scope chain and the
